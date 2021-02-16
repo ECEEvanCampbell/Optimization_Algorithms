@@ -13,9 +13,9 @@ def main():
 
     # Define cost function using symbolic variables
     cost_function = []
-    cost_function.append(   (state_sym[0]-5)**2 + state_sym[1]**4   )
+    cost_function.append(   sympy.sin(state_sym[0]) + sympy.cos(state_sym[1]) + 3.14159   )
 
-    fig, axs = custom_optimization_library.make_contour_plot(cost_function, [1, 5, 10, 25, 100, 250])
+    fig, axs = custom_optimization_library.make_contour_plot(cost_function, np.arange(1.,5.,0.5))
 
     # Define initial guess
     # -- From the equation we can see there is a minimum at (x1,x2) = (5,0)
@@ -35,18 +35,18 @@ def main():
     #fig, axs = custom_optimization_library.plot_algorithm_results(fig, axs, GDBB_state_progression, GDBB_cost_progression, GDBB_time_progression, 'GDBB')
 
     # True Hessian
-    NTO_state_progression, NTO_cost_progression, NTO_time_progression = custom_optimization_library.newton_type_optimization(cost_function, state_sym, initial_guess)
+    NTO_state_progression, NTO_cost_progression, NTO_time_progression = custom_optimization_library.newton_type_optimization(cost_function, state_sym, initial_guess, enforce_PD=True)
     fig, axs = custom_optimization_library.plot_algorithm_results(fig, axs, NTO_state_progression, NTO_cost_progression, NTO_time_progression, 'NTO')
     
-    # Gauss-Newton
-    r = [state_sym[0]-5, state_sym[1]**2]
-    GN_state_progression, GN_cost_progression, GN_time_progression = custom_optimization_library.gauss_newton_optimization(cost_function, r, state_sym, initial_guess)
-    fig, axs = custom_optimization_library.plot_algorithm_results(fig, axs, GN_state_progression, GN_cost_progression, GN_time_progression, 'GN')
+    # Gauss-Newton -- Cannot specify an r array
+    #r = UNKNOWN
+    #GN_state_progression, GN_cost_progression, GN_time_progression = custom_optimization_library.gauss_newton_optimization(cost_function, r, state_sym, initial_guess)
+    #fig, axs = custom_optimization_library.plot_algorithm_results(fig, axs, GN_state_progression, GN_cost_progression, GN_time_progression, 'GN')
 
     # Levenberg-Marquardt
-    r = [state_sym[0]-5, state_sym[1]**2]
-    LM_state_progression, LM_cost_progression, LM_time_progression = custom_optimization_library.levenberg_marquardt_optimization(cost_function, r, state_sym, initial_guess)
-    fig, axs = custom_optimization_library.plot_algorithm_results(fig, axs, LM_state_progression, LM_cost_progression, LM_time_progression, 'LM')
+    #r = UNKNOWN
+    #LM_state_progression, LM_cost_progression, LM_time_progression = custom_optimization_library.levenberg_marquardt_optimization(cost_function, r, state_sym, initial_guess)
+    #fig, axs = custom_optimization_library.plot_algorithm_results(fig, axs, LM_state_progression, LM_cost_progression, LM_time_progression, 'LM')
 
     # Constant Hessian
     hessian_val = np.array([[3e-1, 0], [0, 3e-2]])
@@ -54,7 +54,7 @@ def main():
     fig, axs = custom_optimization_library.plot_algorithm_results(fig, axs, CH_state_progression, CH_cost_progression, CH_time_progression, 'CH')
 
     # BFGS
-    BFGS_state_progression, BFGS_cost_progression, BFGS_time_progression = custom_optimization_library.BFGS_optimization(cost_function, state_sym, initial_guess)
+    BFGS_state_progression, BFGS_cost_progression, BFGS_time_progression = custom_optimization_library.BFGS_optimization(cost_function, state_sym, initial_guess, enforce_PD=True)
     fig, axs = custom_optimization_library.plot_algorithm_results(fig, axs, BFGS_state_progression, BFGS_cost_progression, BFGS_time_progression, 'BFGS')
 
     plt.show()
