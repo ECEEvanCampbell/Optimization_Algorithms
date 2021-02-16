@@ -115,7 +115,41 @@ def newton_type_optimization(cost_function, state_sym, initial_guess, iterations
     # Return logging variables
     return state_history, cost_history, time_history
 
+def newton_type_constraint_optimization(cost_function, constraint_function, state_sym, initial_guess, iterations=10, enforce_PD=False):
+    #TODO: currently is a placeholder. only implements NTO, not NTOC
+    # Set up logging variables
+    state_history = np.zeros((len(state_sym), iterations+1))
+    cost_history  = np.zeros(iterations+1) 
+    time_history = np.zeros(iterations+1)
+    # Set up initial settingss
+    state_value = initial_guess
+    initial_time = time.perf_counter()
 
+    # Begin iterative process
+    for i in range(iterations):
+        # Record state and cost
+        state_history[:,i] = state_value
+        cost_history[i]    = eval_expression(cost_function, state_value)
+        # Prepare state update
+        # Get gradient
+        symbolic_gradient  = get_gradient(cost_function, state_sym, state_value)
+        eval_gradient      = eval_expression(symbolic_gradient, state_value)
+        # Get Hessian
+        symbolic_hessian   = get_gradient(symbolic_gradient, state_sym, state_value)
+        eval_hessian       = eval_expression(symbolic_hessian, state_value)
+        if enforce_PD and not isPD(eval_hessian):
+            eval_hessian = make_pd(eval_hessian)
+        # Get update direction, magnitude scaled by -gamma
+        delta_x            = -1*np.dot(np.linalg.pinv(eval_hessian),eval_gradient)
+        # Apply state update
+        state_value        = state_value + delta_x
+        # Get time
+        time_history[i+1]  = time.perf_counter() - initial_time
+    # Log final cost and states
+    state_history[:,i+1] = state_value
+    cost_history[i+1]    = eval_expression(cost_function, state_value)
+    # Return logging variables
+    return state_history, cost_history, time_history
 
 def gauss_newton_optimization(cost_function, r, state_sym, initial_guess, iterations=10):
     # Set up logging variables
@@ -350,7 +384,7 @@ def make_pd(matrix):
 
 
 
-def make_contour_plot(cost_function, levels, delta=0.1):
+def make_contour_plot(cost_function, levels, delta=0.25):
     x = np.arange(-10., 10., delta)
     y = np.arange(-5., 5., delta)
     X,Y = np.meshgrid(x,y)
@@ -389,5 +423,28 @@ def plot_algorithm_results(fig, axs, state_progression, cost_progression, time_p
     axs[2].legend()
 
     plt.draw()
+
+    return fig, axs
+
+def make_constraint_plot(fig, axs, constraint_function, delta=0.5):
+
+    ylims = axs[0].get_ylim()
+    xlims = axs[0].get_xlim()
+
+    x = np.arange(xlims[0], xlims[1], delta)
+    y = np.arange(ylims[0], ylims[1], delta)
+    X,Y = np.meshgrid(x,y)
+    
+    for c in range(len(constraint_function)):
+        valid = np.zeros((X.shape[0],X.shape[1]))
+        for n1 in range(X.shape[0]):
+            for n2 in range(X.shape[1]):
+                if eval_expression(   [constraint_function[c]], np.array([X[n1,n2], Y[n1,n2]])   ) >= 0:
+                    valid[n1,n2] = 1 
+        
+        valid_region = np.where(valid)
+        X_include = X[valid_region]
+        Y_include = Y[valid_region]
+        axs[0].plot(X_include, Y_include, marker=".")
 
     return fig, axs
